@@ -7,6 +7,7 @@ using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 namespace Circuitry {
 	
 	public partial class Form1 : Form {
+
 		private List<Gate> gates;
 		private Gate? draggedGate;
 		public enum connectionType { IN, OUT };
@@ -18,10 +19,14 @@ namespace Circuitry {
 		private bool drawingLine = false;
 		private Pin? startPin;
 
+
 		public Form1() {
 			InitializeComponent();
+			CreateDynamicButtons();
+			CreateMenu();
+
 			this.DoubleBuffered = true;
-			this.ClientSize = new Size(800, 600);
+			this.ClientSize = new Size(1600, 720);
 			this.Text = "Circuitry";
 
 			gates = new List<Gate> {
@@ -35,11 +40,59 @@ namespace Circuitry {
 				new NandGate(250, 500, 120, 80),
 				new NotGate(450, 500, 60, 60)
 			};
-			
+
+			this.KeyPreview = true;
 			this.MouseDown += Form1_MouseDown;
 			this.MouseMove += Form1_MouseMove;
 			this.MouseUp += Form1_MouseUp;
 			this.KeyPress += Form1_KeyPress;
+		}
+
+		private void CreateMenu() {
+			MenuStrip menu = new MenuStrip();
+
+			ToolStripMenuItem fileMenu = new ToolStripMenuItem("File");
+			fileMenu.DropDownItems.Add("Exit", null, Exit_Click);
+
+			menu.Items.Add(fileMenu);
+			menu.Dock = DockStyle.Top;
+
+			this.MainMenuStrip = menu;
+			this.Controls.Add(menu);
+		}
+
+		private void CreateDynamicButtons() {
+			Panel leftPanel = new Panel {
+				Dock = DockStyle.Left,      // Stick to the left side
+				Width = 120,                // Set width of the panel
+				AutoScroll = true,          // Allow scrolling if too many buttons
+				BackColor = Color.LightGray // Optional: background color
+			};
+			// Add buttons vertically
+			for (int i = 0; i < 10; i++) // Example: 10 buttons
+			{
+				System.Windows.Forms.Button btn = new System.Windows.Forms.Button {
+					Text = $"Button {i}",
+					Width = leftPanel.Width - 10,  // Slight margin inside panel
+					Height = 40,
+					Location = new Point(5, i * 45) // Stack vertically with spacing
+				};
+
+				// Click event for the button
+				btn.Click += (s, e) =>
+				{
+					MessageBox.Show($"{btn.Text} clicked");
+				};
+
+				leftPanel.Controls.Add(btn);
+			}
+
+			// Add the panel to the form
+			this.Controls.Add(leftPanel);
+		}
+
+		private void Exit_Click(object sender, EventArgs e) {
+			this.Close();
 		}
 
 		private void Form1_MouseDown(object sender, MouseEventArgs e) {
@@ -104,7 +157,6 @@ namespace Circuitry {
 		}
 
 		private void Form1_KeyPress(object sender, KeyPressEventArgs e) {
-			// Example: Allow only digits
 			if (e.KeyChar == '1') {
 				foreach (Gate gate in gates) {
 					gate.Transfer();
