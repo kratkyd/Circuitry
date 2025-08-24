@@ -42,9 +42,13 @@ namespace Circuitry {
 		private void Form1_MouseDown(object sender, MouseEventArgs e) {
 
 			foreach (Gate gate in gates) {
-				foreach (Pin c in gate.pins) {
-					if (c.Contains(e.Location) && e.Button == MouseButtons.Left) {
-						startPin = c;
+				foreach (Pin p in gate.pins) {
+					if (p.Contains(e.Location) && e.Button == MouseButtons.Left) {
+						if (p is InPin pin && pin.connection != null) {
+							pin.connection.RemoveConnection(pin);
+							pin.connection = null;
+						}
+						startPin = p;
 						drawingLine = true;
 						return;
 					}
@@ -58,7 +62,7 @@ namespace Circuitry {
 
 					gates.Remove(gate);
 					gates.Insert(0, gate);
-					break;
+					return;
 				}
 			}
 		}

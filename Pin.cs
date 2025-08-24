@@ -72,6 +72,10 @@ public class OutPin : Pin {
 			throw new Exception("Error: connection of two OutPins");
 		}
 		InPin endPoint = (InPin)p;
+		if (endPoint.connection != null) {
+			endPoint.connection.RemoveConnection(endPoint);
+			endPoint.connection = null;
+		}
 		this.connections.Add(endPoint);
 		this.CreateLine(endPoint);
 		endPoint.connection = this;
@@ -79,6 +83,16 @@ public class OutPin : Pin {
 
 	public void CreateLine(Pin endPoint) {
 		this.connectionLines.Add(new Line(this, endPoint));
+	}
+
+	public void RemoveConnection(InPin p) {
+		for (int i = 0; i < this.connections.Count; i++) {
+			if (this.connections[i] == p) {
+				connections.RemoveAt(i);
+				connectionLines.RemoveAt(i);
+				break;
+			}
+		}
 	}
 
 	public override void Draw(Graphics g) {
