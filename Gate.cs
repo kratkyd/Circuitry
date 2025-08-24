@@ -110,3 +110,50 @@ public class OrGate : Gate {
 		pins[0].signal = pins[1].signal || pins[2].signal;
 	}
 }
+
+public class XorGate : Gate {
+	public XorGate(int x, int y, int width, int height) : base(x, y, width, height) {
+		bounds = new Rectangle(x, y, width, height);
+		pins = new List<Pin> {
+			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
+			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
+			new InPin(this, new Point(this.bounds.Width-30, this.bounds.Height-10), 20, 20)
+		};
+		text = "XOR";
+	}
+
+	public override void Process() {
+		pins[0].signal = pins[1].signal ^ pins[2].signal;
+	}
+}
+
+public class NandGate : Gate {
+	public NandGate(int x, int y, int width, int height) : base(x, y, width, height) {
+		bounds = new Rectangle(x, y, width, height);
+		pins = new List<Pin> {
+			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
+			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
+			new InPin(this, new Point(this.bounds.Width-30, this.bounds.Height-10), 20, 20)
+		};
+		text = "NAND";
+	}
+
+	public override void Process() {
+		pins[0].signal = !(pins[1].signal && pins[2].signal);
+	}
+}
+
+public class NotGate : Gate {
+	public NotGate(int x, int y, int width, int height) : base(x, y, width, height) {
+		bounds = new Rectangle(x, y, width, height);
+		pins = new List<Pin> {
+			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
+			new InPin(this, new Point(this.bounds.Width/2-10, this.bounds.Height-10), 20, 20)
+		};
+		text = "NOT";
+	}
+
+	public override void Process() {
+		pins[0].signal = !pins[1].signal;
+	}
+}

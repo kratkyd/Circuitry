@@ -30,7 +30,10 @@ namespace Circuitry {
 				new AndGate(350, 80, 120, 80),
 				new OrGate(400, 350, 120, 80),
 				new OneGate(400, 250, 60, 60),
-				new ZeroGate(200, 300, 60, 60)
+				new ZeroGate(200, 300, 60, 60),
+				new XorGate(50, 500, 120, 80),
+				new NandGate(250, 500, 120, 80),
+				new NotGate(450, 500, 60, 60)
 			};
 			
 			this.MouseDown += Form1_MouseDown;
