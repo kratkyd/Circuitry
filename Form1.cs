@@ -66,8 +66,9 @@ namespace Circuitry {
 				foreach (Gate gate in gates) {
 					gate.Process();
 				}
-				if (!changed) return;
+
 				Invalidate();
+				if (!changed) return;
 			}
 			Debug.WriteLine("Timed out");
 		}
