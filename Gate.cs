@@ -22,6 +22,21 @@ public abstract class Gate {
 		}
 	}
 
+	public void RemoveInConnections() {
+		foreach (Pin p in pins) {
+			if (p is InPin ip && ip.connection != null) {
+				for (int i = 0; i < ip.connection.connections.Count; i++) {
+					if (ip.connection.connections[i] == ip) {
+						ip.connection.connections.RemoveAt(i);
+						ip.connection.connectionLines.RemoveAt(i);
+						break;
+					}
+				}
+				//ip.connection.connections.Remove(ip);
+			}
+		}
+	}
+
 	public bool Transfer() {
 		bool changed = false; //for stopping the program
 		foreach (Pin p in pins) {
