@@ -59,18 +59,28 @@ namespace Circuitry {
 			for (int i = 0; i < 1000; i++) {
 				changed = false;
 				foreach (Gate gate in gates) {
+					gate.Process();
+				}
+				foreach (Gate gate in gates) {
 					if (gate.Transfer()) {
 						changed = true;
 					}
-				}
-				foreach (Gate gate in gates) {
-					gate.Process();
 				}
 
 				Invalidate();
 				if (!changed) return;
 			}
 			Debug.WriteLine("Timed out");
+		}
+
+		private void StepSignal() {
+			foreach (Gate gate in gates) {
+				gate.Process();
+			}
+			foreach (Gate gate in gates) {
+				gate.Transfer();
+			}
+			Invalidate();
 		}
 
 		private void CreateMenu() {
@@ -82,11 +92,16 @@ namespace Circuitry {
 			menu.Items.Add(fileMenu);
 
 			ToolStripButton runButton = new ToolStripButton("Run");
-			runButton.Click += (s, e) =>
-			{
+			runButton.Click += (s, e) => {
 				RunSignal();
 			};
 			menu.Items.Add(runButton);
+
+			ToolStripButton stepButton = new ToolStripButton("Step");
+			stepButton.Click += (s, e) => {
+				StepSignal();
+			};
+			menu.Items.Add(stepButton);
 
 			menu.Dock = DockStyle.Top;
 
