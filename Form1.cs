@@ -1,12 +1,14 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Reflection;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Circuitry {
-	
+
 	public partial class Form1 : Form {
+		private List<(string name, Type gateType)> options;
 
 		private List<Gate> gates;
 		private Gate? draggedGate;
@@ -21,25 +23,26 @@ namespace Circuitry {
 
 
 		public Form1() {
+			gates = new List<Gate> { };
+			options = new List<(string name, Type gateType)> {
+				("1", typeof(OneGate)),
+				("0", typeof(ZeroGate)),
+				("NOT", typeof(NotGate)),
+				("AND", typeof(AndGate)),
+				("NAND", typeof(NandGate)),
+				("OR", typeof(OrGate)),
+				("NOR", typeof(NorGate)),
+				("XOR", typeof(XorGate))
+			};
+
 			InitializeComponent();
 			CreateDynamicButtons();
 			CreateMenu();
 
 			this.DoubleBuffered = true;
-			this.ClientSize = new Size(1600, 720);
+			this.ClientSize = new Size(1280, 720);
 			this.Text = "Circuitry";
 
-			gates = new List<Gate> {
-				new AndGate(50, 50, 120, 80),
-				new AndGate(200, 150, 120, 80),
-				new AndGate(350, 80, 120, 80),
-				new OrGate(400, 350, 120, 80),
-				new OneGate(400, 250, 60, 60),
-				new ZeroGate(200, 300, 60, 60),
-				new XorGate(50, 500, 120, 80),
-				new NandGate(250, 500, 120, 80),
-				new NotGate(450, 500, 60, 60)
-			};
 
 			this.KeyPreview = true;
 			this.MouseDown += Form1_MouseDown;
@@ -69,19 +72,22 @@ namespace Circuitry {
 				BackColor = Color.LightGray // Optional: background color
 			};
 			// Add buttons vertically
-			for (int i = 0; i < 10; i++) // Example: 10 buttons
-			{
+
+			for (int i = 0; i < options.Count; i++) {
 				System.Windows.Forms.Button btn = new System.Windows.Forms.Button {
-					Text = $"Button {i}",
-					Width = leftPanel.Width - 10,  // Slight margin inside panel
+					Text = options[i].name,
+					Width = leftPanel.Width - 10,
 					Height = 40,
-					Location = new Point(5, i * 45) // Stack vertically with spacing
+					Location = new Point(5, i * 45)
 				};
 
-				// Click event for the button
-				btn.Click += (s, e) =>
-				{
-					MessageBox.Show($"{btn.Text} clicked");
+				Type gateType = options[i].gateType;
+
+				btn.Click += (s, e) => {
+					Debug.WriteLine("hello");
+					object gateInstance = Activator.CreateInstance(gateType, 200, 100);
+					gates.Add((Gate)gateInstance);
+					Invalidate();
 				};
 
 				leftPanel.Controls.Add(btn);

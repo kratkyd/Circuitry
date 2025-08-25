@@ -6,7 +6,7 @@ public abstract class Gate {
 	public List<Pin> pins;
 	public String text;
 
-	public Gate(int x, int y, int width, int height) {
+	public Gate(int x, int y) {
 		//does this need to be here?
 	}
 
@@ -65,8 +65,8 @@ public abstract class Gate {
 }
 
 public class AndGate : Gate {
-	public AndGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public AndGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 120, 80);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
 			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
@@ -81,8 +81,8 @@ public class AndGate : Gate {
 }
 
 public class OneGate : Gate {
-	public OneGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public OneGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 60, 60);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20)
 		};
@@ -92,8 +92,8 @@ public class OneGate : Gate {
 }
 
 public class ZeroGate : Gate {
-	public ZeroGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public ZeroGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 60, 60);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20)
 		};
@@ -102,8 +102,8 @@ public class ZeroGate : Gate {
 }
 
 public class OrGate : Gate {
-	public OrGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public OrGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 120, 80);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
 			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
@@ -117,9 +117,25 @@ public class OrGate : Gate {
 	}
 }
 
+public class NorGate : Gate {
+	public NorGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 120, 80);
+		pins = new List<Pin> {
+			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
+			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
+			new InPin(this, new Point(this.bounds.Width-30, this.bounds.Height-10), 20, 20)
+		};
+		text = "NOR";
+	}
+
+	public override void Process() {
+		pins[0].signal = !(pins[1].signal || pins[2].signal);
+	}
+}
+
 public class XorGate : Gate {
-	public XorGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public XorGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 120, 80);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
 			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
@@ -134,8 +150,8 @@ public class XorGate : Gate {
 }
 
 public class NandGate : Gate {
-	public NandGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public NandGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 120, 80);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
 			new InPin(this, new Point(10, this.bounds.Height-10), 20, 20),
@@ -150,8 +166,8 @@ public class NandGate : Gate {
 }
 
 public class NotGate : Gate {
-	public NotGate(int x, int y, int width, int height) : base(x, y, width, height) {
-		bounds = new Rectangle(x, y, width, height);
+	public NotGate(int x, int y) : base(x, y) {
+		bounds = new Rectangle(x, y, 60, 60);
 		pins = new List<Pin> {
 			new OutPin(this, new Point(this.bounds.Width/2-10, -10), 20, 20),
 			new InPin(this, new Point(this.bounds.Width/2-10, this.bounds.Height-10), 20, 20)
