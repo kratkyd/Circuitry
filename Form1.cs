@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
+using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Circuitry {
@@ -11,8 +12,7 @@ namespace Circuitry {
 		private List<(string name, Type gateType)> options;
 
 		private List<Gate> gates;
-		private Gate? draggedGate;
-		public enum connectionType { IN, OUT };
+		public Gate? draggedGate;
 
 		private bool dragging = false;
 		private Point dragStartMouse;
@@ -21,6 +21,7 @@ namespace Circuitry {
 		private bool drawingLine = false;
 		private Pin? startPin;
 
+		private Rectangle deleteSpot;
 
 		public Form1() {
 			gates = new List<Gate> { };
@@ -43,6 +44,7 @@ namespace Circuitry {
 			this.ClientSize = new Size(1280, 720);
 			this.Text = "Circuitry";
 
+			deleteSpot = new Rectangle(this.ClientSize.Width-200, this.ClientSize.Height-200, 200, 200);
 
 			this.KeyPreview = true;
 			this.MouseDown += Form1_MouseDown;
@@ -146,6 +148,10 @@ namespace Circuitry {
 			if (dragging && e.Button == MouseButtons.Left) {
 				dragging = false;
 				this.Cursor = Cursors.Default;
+				if (draggedGate != null && draggedGate.bounds.IntersectsWith(deleteSpot)) {
+					gates.Remove(draggedGate);
+					Invalidate();
+				}
 			}
 			if (drawingLine && e.Button == MouseButtons.Left) {
 				drawingLine = false;
@@ -183,6 +189,12 @@ namespace Circuitry {
 		protected override void OnPaint(PaintEventArgs e) {
 			base.OnPaint(e);
 			e.Graphics.Clear(Color.WhiteSmoke);
+			using (Brush fillBrush = new SolidBrush(Color.Red))
+			using (Pen borderPen = new Pen(Color.DarkRed, 3)) {
+				e.Graphics.FillRectangle(fillBrush, deleteSpot);
+				e.Graphics.DrawRectangle(borderPen, deleteSpot);
+			}
+
 			foreach (Gate gate in gates.AsEnumerable().Reverse().ToList()) {
 				gate.Draw(e.Graphics);
 			}

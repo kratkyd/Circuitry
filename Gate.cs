@@ -23,16 +23,18 @@ public abstract class Gate {
 
 	public void Transfer() {
 		foreach (Pin p in pins) {
-			if (p is not OutPin) {
-				p.signal = false;
+			if (p is InPin ip) {
+				if (ip.connection == null) {
+					ip.signal = false;
+				}
 				continue;
 			}
-			OutPin pin = (OutPin)p;
-			if (pin.connections.Count == 0) {
+			OutPin op = (OutPin)p;
+			if (op.connections.Count == 0) {
 				continue;
 			}
 
-			foreach (InPin c in pin.connections) {
+			foreach (InPin c in op.connections) {
 				c.signal = p.signal;
 			}
 		}
