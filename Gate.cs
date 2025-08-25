@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Drawing;
+using System.Security.Cryptography.X509Certificates;
 
 public abstract class Gate {
 	public Rectangle bounds { get; protected set; }
@@ -21,23 +22,26 @@ public abstract class Gate {
 		}
 	}
 
-	public void Transfer() {
+	public bool Transfer() {
+		bool changed = false; //for stopping the program
 		foreach (Pin p in pins) {
 			if (p is InPin ip) {
 				if (ip.connection == null) {
+					if (ip.signal) changed = true;
 					ip.signal = false;
 				}
 				continue;
 			}
+
 			OutPin op = (OutPin)p;
-			if (op.connections.Count == 0) {
-				continue;
-			}
+			if (op.connections.Count == 0) continue;
 
 			foreach (InPin c in op.connections) {
-				c.signal = p.signal;
+				if (c.signal != op.signal) changed = true;
+				c.signal = op.signal;
 			}
 		}
+		return changed;
 	}	
 
 	public virtual void Process() {

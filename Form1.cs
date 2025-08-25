@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Reflection;
 using System.Windows.Forms;
@@ -53,6 +54,24 @@ namespace Circuitry {
 			this.KeyPress += Form1_KeyPress;
 		}
 
+		private void RunSignal() {
+			bool changed;
+			for (int i = 0; i < 1000; i++) {
+				changed = false;
+				foreach (Gate gate in gates) {
+					if (gate.Transfer()) {
+						changed = true;
+					}
+				}
+				foreach (Gate gate in gates) {
+					gate.Process();
+				}
+				if (!changed) return;
+				Invalidate();
+			}
+			Debug.WriteLine("Timed out");
+		}
+
 		private void CreateMenu() {
 			MenuStrip menu = new MenuStrip();
 
@@ -60,6 +79,14 @@ namespace Circuitry {
 			fileMenu.DropDownItems.Add("Exit", null, Exit_Click);
 
 			menu.Items.Add(fileMenu);
+
+			ToolStripButton runButton = new ToolStripButton("Run");
+			runButton.Click += (s, e) =>
+			{
+				RunSignal();
+			};
+			menu.Items.Add(runButton);
+
 			menu.Dock = DockStyle.Top;
 
 			this.MainMenuStrip = menu;
@@ -86,7 +113,6 @@ namespace Circuitry {
 				Type gateType = options[i].gateType;
 
 				btn.Click += (s, e) => {
-					Debug.WriteLine("hello");
 					object gateInstance = Activator.CreateInstance(gateType, 200, 100);
 					gates.Add((Gate)gateInstance);
 					Invalidate();
@@ -170,11 +196,14 @@ namespace Circuitry {
 
 		private void Form1_KeyPress(object sender, KeyPressEventArgs e) {
 			if (e.KeyChar == '1') {
+				bool changed = false;
 				foreach (Gate gate in gates) {
-					gate.Transfer();
+					if (gate.Transfer()) {
+						changed = true;
+					}
 				}
 				e.Handled = true;
-				Debug.WriteLine("Transfer");
+				Debug.WriteLine("Transfer: " + changed);
 				Invalidate();
 			} else if (e.KeyChar == '2') {
 				foreach (Gate gate in gates) {
