@@ -22,7 +22,7 @@ public abstract class Gate {
 		}
 	}
 
-	public void RemoveInConnections() {
+	public void RemoveConnections() {
 		foreach (Pin p in pins) {
 			if (p is InPin ip && ip.connection != null) {
 				for (int i = 0; i < ip.connection.connections.Count; i++) {
@@ -33,9 +33,15 @@ public abstract class Gate {
 					}
 				}
 				//ip.connection.connections.Remove(ip);
+			} else if (p is OutPin op) {
+				foreach (InPin c in op.connections) {
+					c.connection = null;
+				}
 			}
 		}
 	}
+
+
 
 	public bool Transfer() {
 		bool changed = false; //for stopping the program

@@ -191,7 +191,7 @@ namespace Circuitry {
 				dragging = false;
 				this.Cursor = Cursors.Default;
 				if (draggedGate != null && draggedGate.bounds.IntersectsWith(deleteSpot)) {
-					draggedGate.RemoveInConnections();
+					draggedGate.RemoveConnections();
 					gates.Remove(draggedGate);
 					Invalidate();
 				}
