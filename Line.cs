@@ -10,7 +10,7 @@ public class Line
 	}
 
 	public void Draw(Graphics g) {
-		using (Pen linePen = new Pen(Color.Black, 5)) {
+		using (Pen linePen = new Pen(Color.Gray, 5)) {
 			Point startPointLoc = startPoint.bounds.Location;
 			Point endPointLoc = endPoint.bounds.Location;
 			startPointLoc.Offset(10, 10);

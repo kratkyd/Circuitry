@@ -7,10 +7,12 @@ public class Pin
 	public Point offset;
 	public float width;
 	public float height;
+	public Gate parent;
 
 	public bool signal = false;
 	
 	public Pin(Gate parent, Point offset, int width, int height) {
+		this.parent = parent;
 		this.offset = offset;
 		this.width = width;
 		this.height = height;
