@@ -11,7 +11,8 @@ public class Pin
 
 	public bool signal = false;
 	
-	public Pin(Gate parent, Point offset, int width, int height) {
+	public Pin(Gate parent, Point offset, int width, int height) 
+	{
 		this.parent = parent;
 		this.offset = offset;
 		this.width = width;
@@ -19,62 +20,78 @@ public class Pin
 		bounds = new Rectangle(parent.bounds.X + offset.X , parent.bounds.Y + offset.Y, width, height);
 	}
 
-	public bool Contains(Point pt) {
+	public bool Contains(Point pt) 
+	{
 		return bounds.Contains(pt);
 	}
 
-	public void MoveTo(Point newLocation) {
+	public void MoveTo(Point newLocation) 
+	{
 		newLocation.Offset(offset);
 		bounds = new Rectangle(newLocation, bounds.Size);
 	}
 
-	public virtual void Connect(Pin endPoint) {
+	public virtual void Connect(Pin endPoint) 
+	{
 
 	}
 
-	public virtual void Draw(Graphics g) {
+	public virtual void Draw(Graphics g) 
+	{
 		Brush fillBrush;
-		if (signal) {
+		if (signal) 
+		{
 			fillBrush = new SolidBrush(Color.LightGreen);
-		} else {
+		} else 
+		{
 			fillBrush = new SolidBrush(Color.Tomato);
 		}
 			using (fillBrush)
-			using (Pen borderPen = new Pen(Color.DarkBlue, 3)) {
+			using (Pen borderPen = new Pen(Color.DarkBlue, 3)) 
+			{
 				g.FillEllipse(fillBrush, bounds);
 				g.DrawEllipse(borderPen, bounds);
 			}
 	}
 }
 
-public class InPin : Pin {
+public class InPin : Pin 
+{
 	public OutPin? connection;
-	public InPin(Gate parent, Point offset, int width, int height) : base(parent, offset, width, height) {
+	public InPin(Gate parent, Point offset, int width, int height) : base(parent, offset, width, height) 
+	{
 
 	}
 
-	public override void Connect(Pin p) {
-		if (p is InPin) {
+	public override void Connect(Pin p) 
+	{
+		if (p is InPin) 
+		{
 			throw new Exception("Error: connection of two inPins");
 		}
 		p.Connect(this);
 	}
 }
 
-public class OutPin : Pin {
+public class OutPin : Pin 
+	{
 	public List<InPin> connections;
 	public List<Line> connectionLines;
-	public OutPin(Gate parent, Point offset, int width, int height) : base(parent, offset, width, height) {
+	public OutPin(Gate parent, Point offset, int width, int height) : base(parent, offset, width, height) 
+	{
 		connections = new List<InPin>();
 		connectionLines = new List<Line>();
 	}
 
-	public override void Connect(Pin p) {
-		if (p is OutPin) {
+	public override void Connect(Pin p) 
+	{
+		if (p is OutPin) 
+		{
 			throw new Exception("Error: connection of two OutPins");
 		}
 		InPin endPoint = (InPin)p;
-		if (endPoint.connection != null) {
+		if (endPoint.connection != null) 
+		{
 			endPoint.connection.RemoveConnection(endPoint);
 			endPoint.connection = null;
 		}
@@ -83,13 +100,17 @@ public class OutPin : Pin {
 		endPoint.connection = this;
 	}
 
-	public void CreateLine(Pin endPoint) {
+	public void CreateLine(Pin endPoint) 
+	{
 		this.connectionLines.Add(new Line(this, endPoint));
 	}
 
-	public void RemoveConnection(InPin p) {
-		for (int i = 0; i < this.connections.Count; i++) {
-			if (this.connections[i] == p) {
+	public void RemoveConnection(InPin p) 
+	{
+		for (int i = 0; i < this.connections.Count; i++) 
+		{
+			if (this.connections[i] == p) 
+			{
 				connections.RemoveAt(i);
 				connectionLines.RemoveAt(i);
 				break;
@@ -97,10 +118,11 @@ public class OutPin : Pin {
 		}
 	}
 
-	public override void Draw(Graphics g) {
+	public override void Draw(Graphics g) 
+	{
 		base.Draw(g);
-		foreach (Line l in connectionLines) {
-		//Debug.WriteLine("hello");
+		foreach (Line l in connectionLines) 
+		{
 			l.Draw(g);
 		}
 	}
