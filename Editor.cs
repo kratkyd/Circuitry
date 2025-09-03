@@ -1,18 +1,24 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Drawing;
+using System.Data;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
 using System.Diagnostics;
 
-
 namespace Circuitry
-	{
-
-	public partial class Form1 : Form 
-		{
+{
+    public partial class Editor: UserControl
+    {
 		private List<(string name, Type gateType)> options;
-
 		Panel leftPanel;
 
 		private List<Gate> gates;
 		private List<CustomGate> customGates;
-		public Gate? draggedGate;
+		private Gate? draggedGate;
 
 		private bool dragging = false;
 		private Point dragStartMouse;
@@ -29,26 +35,13 @@ namespace Circuitry
 		private Rectangle deleteSpot;
 
 		public CheckBox toggleButton;
-		public Form1() 
-		{
-
+		public Editor()
+        {
 			gates = new List<Gate> { };
 			selectedInputs = new List<InputGate> { };
 			selectedOutputs = new List<OutputGate> { };
-			options = new List<(string name, Type gateType)> 
-			{
-				("1", typeof(OneGate)),
-				("0", typeof(ZeroGate)),
-				("NOT", typeof(NotGate)),
-				("AND", typeof(AndGate)),
-				("NAND", typeof(NandGate)),
-				("OR", typeof(OrGate)),
-				("NOR", typeof(NorGate)),
-				("XOR", typeof(XorGate)),
-				("Blank", typeof(BlankGate)),
-				("Input", typeof(InputGate)),
-				("Output", typeof(OutputGate))
-			};
+
+			options = Data.baseOptions;
 			customGates = new List<CustomGate> { };
 
 			InitializeComponent();
@@ -56,32 +49,27 @@ namespace Circuitry
 			leftPanel = CreateDynamicButtons();
 
 			this.DoubleBuffered = true;
-			this.ClientSize = new Size(1280, 720);
-			this.Text = "Circuitry";
 
-			deleteSpot = new Rectangle(this.ClientSize.Width-200, this.ClientSize.Height-200, 200, 200);
+			deleteSpot = new Rectangle(Data.clientSize.Width - 200, Data.clientSize.Height - 200, 200, 200);
 
-			this.KeyPreview = true;
 			this.MouseDown += Form1_MouseDown;
 			this.MouseMove += Form1_MouseMove;
 			this.MouseUp += Form1_MouseUp;
 			this.KeyPress += Form1_KeyPress;
 		}
+		private void OpenLevel(int levelNum) {
+			((MainForm)this.Parent).ShowControl(((MainForm)this.Parent).level1);
+		}
 
-		private void RunSignal() 
-		{
+		private void RunSignal() {
 			bool changed;
-			for (int i = 0; i < 1000; i++) 
-			{
+			for (int i = 0; i < 1000; i++) {
 				changed = false;
-				foreach (Gate gate in gates) 
-				{
+				foreach (Gate gate in gates) {
 					gate.Process();
 				}
-				foreach (Gate gate in gates) 
-				{
-					if (gate.Transfer()) 
-					{
+				foreach (Gate gate in gates) {
+					if (gate.Transfer()) {
 						changed = true;
 					}
 				}
@@ -92,31 +80,25 @@ namespace Circuitry
 			Debug.WriteLine("Timed out");
 		}
 
-		private void StepSignal() 
-		{
-			foreach (Gate gate in gates) 
-			{
+		private void StepSignal() {
+			foreach (Gate gate in gates) {
 				gate.Process();
 			}
-			foreach (Gate gate in gates) 
-			{
+			foreach (Gate gate in gates) {
 				gate.Transfer();
 			}
 			Invalidate();
 		}
 
-		private void CreateNewGate(string gateName) 
-		{
+		private void CreateNewGate(string gateName) {
 			Debug.WriteLine("create new gate");
 			selectedInputs.Reverse();
 			selectedOutputs.Reverse();
 			CustomGate newGate = new CustomGate(500, 500, this, gateName, gates, selectedInputs, selectedOutputs);
 			selectedInputs = new List<InputGate> { };
 			selectedOutputs = new List<OutputGate> { };
-			foreach(Gate g in gates) 
-			{
-				if (g is InputGate ig) 
-				{
+			foreach (Gate g in gates) {
+				if (g is InputGate ig) {
 					ig.toggleButton.Visible = false;
 				}
 			}
@@ -127,8 +109,7 @@ namespace Circuitry
 			leftPanel = CreateDynamicButtons();
 		}
 
-		private void CreateMenu() 
-		{
+		private void CreateMenu() {
 			MenuStrip menu = new MenuStrip();
 
 			ToolStripMenuItem fileMenu = new ToolStripMenuItem("File");
@@ -137,32 +118,26 @@ namespace Circuitry
 			menu.Items.Add(fileMenu);
 
 			ToolStripButton runButton = new ToolStripButton("Run");
-			runButton.Click += (s, e) => 
-			{
+			runButton.Click += (s, e) => {
 				RunSignal();
 			};
 			menu.Items.Add(runButton);
 
 			ToolStripButton stepButton = new ToolStripButton("Step");
-			stepButton.Click += (s, e) => 
-			{
+			stepButton.Click += (s, e) => {
 				StepSignal();
 			};
 			menu.Items.Add(stepButton);
 
 			ToolStripButton newGateButton = new ToolStripButton("New");
-			newGateButton.Click += (s, e) => 
-			{
+			newGateButton.Click += (s, e) => {
 				selectingInputs = true;
-				AddMessageBlock("Gate order: Select input gates (unused gates will get 0 signal)", (s, ev) => 
-				{
+				AddMessageBlock("Gate order: Select input gates (unused gates will get 0 signal)", (s, ev) => {
 					selectingInputs = false;
 					selectingOutputs = true;
-					AddMessageBlock("Gate order: Select output gates", (s, ev) => 
-					{
+					AddMessageBlock("Gate order: Select output gates", (s, ev) => {
 						selectingOutputs = false;
-						AddInputBlock("Name the new gate", (text) => 
-						{
+						AddInputBlock("Name the new gate", (text) => {
 							CreateNewGate(text);
 						});
 						Invalidate();
@@ -172,16 +147,22 @@ namespace Circuitry
 			};
 			menu.Items.Add(newGateButton);
 
-			menu.Dock = DockStyle.Top;
+			ToolStripMenuItem levelMenu = new ToolStripMenuItem("Levels");
+			levelMenu.DropDownItems.Add("Level 1", null, (s, e) => {
+				OpenLevel(1);
+			});
+			levelMenu.DropDownItems.Add("Level 2", null, (s, e) => {
+				//Open_Level(2);
+			});
+			menu.Items.Add(levelMenu);
 
-			this.MainMenuStrip = menu;
+			menu.Dock = DockStyle.Top;
+			//this.MainMenuStrip = menu;
 			this.Controls.Add(menu);
 		}
 
-		private Panel CreateDynamicButtons() 
-		{
-			Panel leftPanel = new Panel 
-			{
+		private Panel CreateDynamicButtons() {
+			Panel leftPanel = new Panel {
 				Dock = DockStyle.Left,      // Stick to the left side
 				Width = 120,                // Set width of the panel
 				AutoScroll = true,          // Allow scrolling if too many buttons
@@ -189,10 +170,8 @@ namespace Circuitry
 			};
 			// Add buttons vertically
 
-			for (int i = 0; i < options.Count; i++) 
-			{
-				Button btn = new Button 
-				{
+			for (int i = 0; i < options.Count; i++) {
+				Button btn = new Button {
 					Text = options[i].name,
 					Width = leftPanel.Width - 10,
 					Height = 40,
@@ -201,8 +180,7 @@ namespace Circuitry
 
 				Type gateType = options[i].gateType;
 
-				btn.Click += (s, e) => 
-				{
+				btn.Click += (s, e) => {
 					object gateInstance = Activator.CreateInstance(gateType, 200, 100, this);
 					gates.Add((Gate)gateInstance);
 					Invalidate();
@@ -211,20 +189,17 @@ namespace Circuitry
 				leftPanel.Controls.Add(btn);
 			}
 
-			for (int i = 0; i < customGates.Count; i++) 
-			{
-				Button btn = new Button 
-				{
+			for (int i = 0; i < customGates.Count; i++) {
+				Button btn = new Button {
 					Text = customGates[i].text,
 					Width = leftPanel.Width - 10,
 					Height = 40,
-					Location = new Point(5, options.Count*45 + 10 + i*45)
+					Location = new Point(5, options.Count * 45 + 10 + i * 45)
 				};
 
 				CustomGate cg = customGates[i];
 
-				btn.Click += (s, e) => 
-				{
+				btn.Click += (s, e) => {
 					Gate gateInstance = cg.createInstance();
 					gates.Add(gateInstance);
 					Invalidate();
@@ -238,20 +213,17 @@ namespace Circuitry
 			return leftPanel;
 		}
 
-		private void AddMessageBlock(string message, EventHandler buttonClickHandler) 
-		{
+		private void AddMessageBlock(string message, EventHandler buttonClickHandler) {
 			// Create the panel (message block)
-			Panel block = new Panel 
-			{
+			Panel block = new Panel {
 				Size = new Size(250, 120),
 				BorderStyle = BorderStyle.FixedSingle,
 				BackColor = Color.LightGray,
-				Location = new Point(900, 50) 
+				Location = new Point(900, 50)
 			};
 
 			// Create label
-			Label lbl = new Label 
-			{
+			Label lbl = new Label {
 				Text = message,
 				AutoSize = false,
 				Size = new Size(230, 70),
@@ -260,15 +232,13 @@ namespace Circuitry
 			};
 
 			// Create button
-			Button btn = new Button 
-			{
+			Button btn = new Button {
 				Text = "OK",
 				Size = new Size(80, 30),
 				Location = new Point(10, 80)
 			};
 
-			btn.Click += (s, e) =>
-			{
+			btn.Click += (s, e) => {
 				// Call custom handler passed by caller
 				buttonClickHandler?.Invoke(s, e);
 
@@ -284,19 +254,16 @@ namespace Circuitry
 			this.Controls.Add(block);
 		}
 
-		private void AddInputBlock(string labelText, Action<string> buttonHandler) 
-		{
+		private void AddInputBlock(string labelText, Action<string> buttonHandler) {
 			// Create panel (input block)
-			Panel block = new Panel 
-			{
+			Panel block = new Panel {
 				Size = new Size(300, 100),
 				BorderStyle = BorderStyle.FixedSingle,
 				BackColor = Color.LightBlue,
 				Location = new Point(900, 50)
 			};
 
-			Label lbl = new Label 
-			{
+			Label lbl = new Label {
 				Text = labelText,
 				AutoSize = false,
 				Size = new Size(280, 20),
@@ -304,21 +271,18 @@ namespace Circuitry
 				TextAlign = ContentAlignment.MiddleLeft
 			};
 
-			TextBox input = new TextBox 
-			{
+			TextBox input = new TextBox {
 				Size = new Size(280, 25),
 				Location = new Point(10, 35)
 			};
 
-			Button btn = new Button 
-			{
+			Button btn = new Button {
 				Text = "Submit",
 				Size = new Size(80, 30),
 				Location = new Point(10, 65)
 			};
 
-			btn.Click += (s, e) =>
-			{
+			btn.Click += (s, e) => {
 				// Call the handler with the input text
 				buttonHandler?.Invoke(input.Text);
 
@@ -334,25 +298,19 @@ namespace Circuitry
 		}
 
 
-		private void Exit_Click(object sender, EventArgs e)
-		{
-			this.Close();
+		private void Exit_Click(object sender, EventArgs e) {
+			//this.Close();
 		}
 
-		private void Form1_MouseDown(object sender, MouseEventArgs e) 
-		{
-			if (selectingInputs) 
-			{
-				foreach (Gate g in gates) 
-				{
+		private void Form1_MouseDown(object sender, MouseEventArgs e) {
+			if (selectingInputs) {
+				foreach (Gate g in gates) {
 					if (g is not InputGate ig) continue;
-					if (g.Contains(e.Location) && e.Button == MouseButtons.Left) 
-					{
-						if (selectedInputs.Contains(ig)) 
-						{
+					if (g.Contains(e.Location) && e.Button == MouseButtons.Left) {
+						if (selectedInputs.Contains(ig)) {
 							selectedInputs.Remove(ig);
-						} else 
-						{
+						}
+						else {
 							selectedInputs.Add(ig);
 						}
 						Invalidate();
@@ -362,19 +320,14 @@ namespace Circuitry
 				return;
 			}
 
-			if (selectingOutputs) 
-				{
-				foreach (Gate g in gates) 
-					{
+			if (selectingOutputs) {
+				foreach (Gate g in gates) {
 					if (g is not OutputGate og) continue;
-					if (g.Contains(e.Location) && e.Button == MouseButtons.Left) 
-						{
-						if (selectedOutputs.Contains(og)) 
-						{
+					if (g.Contains(e.Location) && e.Button == MouseButtons.Left) {
+						if (selectedOutputs.Contains(og)) {
 							selectedOutputs.Remove(og);
 						}
-						else 
-						{
+						else {
 							selectedOutputs.Add(og);
 						}
 						Invalidate();
@@ -384,14 +337,10 @@ namespace Circuitry
 				return;
 			}
 
-			foreach (Gate gate in gates) 
-			{
-				foreach (Pin p in gate.pins) 
-				{
-					if (p.Contains(e.Location) && e.Button == MouseButtons.Left) 
-					{
-						if (p is InPin pin && pin.connection != null) 
-						{
+			foreach (Gate gate in gates) {
+				foreach (Pin p in gate.pins) {
+					if (p.Contains(e.Location) && e.Button == MouseButtons.Left) {
+						if (p is InPin pin && pin.connection != null) {
 							pin.connection.RemoveConnection(pin);
 							pin.connection = null;
 						}
@@ -400,8 +349,7 @@ namespace Circuitry
 						return;
 					}
 				}
-				if (gate.Contains(e.Location) && e.Button == MouseButtons.Left) 
-				{
+				if (gate.Contains(e.Location) && e.Button == MouseButtons.Left) {
 					dragging = true;
 					draggedGate = gate;
 					dragStartMouse = e.Location;
@@ -415,10 +363,8 @@ namespace Circuitry
 			}
 		}
 
-		private void Form1_MouseMove(object sender, MouseEventArgs e) 
-		{
-			if (dragging) 
-			{
+		private void Form1_MouseMove(object sender, MouseEventArgs e) {
+			if (dragging) {
 				int dx = e.X - dragStartMouse.X;
 				int dy = e.Y - dragStartMouse.Y;
 				Point newLocation = new Point(dragStartGateLocation.X + dx, dragStartGateLocation.Y + dy);
@@ -428,26 +374,21 @@ namespace Circuitry
 			if (drawingLine) Invalidate();
 		}
 
-		private void Form1_MouseUp(object sender, MouseEventArgs e) 
-			{
-			if (dragging && e.Button == MouseButtons.Left) 
-			{
+		private void Form1_MouseUp(object sender, MouseEventArgs e) {
+			if (dragging && e.Button == MouseButtons.Left) {
 				dragging = false;
 				this.Cursor = Cursors.Default;
-				if (draggedGate != null && draggedGate.bounds.IntersectsWith(deleteSpot)) 
-				{
+				if (draggedGate != null && draggedGate.bounds.IntersectsWith(deleteSpot)) {
 					draggedGate.Remove();
 					gates.Remove(draggedGate);
 					Invalidate();
 				}
 			}
-			if (drawingLine && e.Button == MouseButtons.Left) 
-			{
+			if (drawingLine && e.Button == MouseButtons.Left) {
 				drawingLine = false;
 				foreach (Gate gate in gates) {
 					foreach (Pin c in gate.pins) {
-						if (c.Contains(e.Location) && c.GetType() != startPin.GetType()) 
-						{
+						if (c.Contains(e.Location) && c.GetType() != startPin.GetType()) {
 							Debug.WriteLine("connection made"); // maybe move all to class
 							startPin.Connect(c);
 							//break; // something better!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -458,23 +399,19 @@ namespace Circuitry
 			}
 		}
 
-		private void Form1_KeyPress(object sender, KeyPressEventArgs e) 
-		{
-			if (e.KeyChar == '1') 
-			{
+		private void Form1_KeyPress(object sender, KeyPressEventArgs e) {
+			if (e.KeyChar == '1') {
 				bool changed = false;
-				foreach (Gate gate in gates) 
-				{
-					if (gate.Transfer()) 
-					{
+				foreach (Gate gate in gates) {
+					if (gate.Transfer()) {
 						changed = true;
 					}
 				}
 				e.Handled = true;
 				Debug.WriteLine("Transfer: " + changed);
 				Invalidate();
-			} else if (e.KeyChar == '2') 
-			{
+			}
+			else if (e.KeyChar == '2') {
 				foreach (Gate gate in gates) gate.Process();
 				e.Handled = true;
 				Debug.WriteLine("Process");
@@ -482,36 +419,29 @@ namespace Circuitry
 			}
 		}
 
-		protected override void OnPaint(PaintEventArgs e) 
-		{
+		protected override void OnPaint(PaintEventArgs e) {
 			base.OnPaint(e);
 			e.Graphics.Clear(Color.WhiteSmoke);
 			using (Brush fillBrush = new SolidBrush(Color.Red))
-			using (Pen borderPen = new Pen(Color.DarkRed, 3)) 
-			{
+			using (Pen borderPen = new Pen(Color.DarkRed, 3)) {
 				e.Graphics.FillRectangle(fillBrush, deleteSpot);
 				e.Graphics.DrawRectangle(borderPen, deleteSpot);
 			}
 
-			foreach (Gate gate in gates.AsEnumerable().Reverse().ToList()) 
-			{
+			foreach (Gate gate in gates.AsEnumerable().Reverse().ToList()) {
 				gate.Draw(e.Graphics);
 			}
 
-			if (drawingLine) 
-			{
-				using (Pen blackPen = new Pen(Color.Black, 4)) 
-				{
+			if (drawingLine) {
+				using (Pen blackPen = new Pen(Color.Black, 4)) {
 					Point startLoc = startPin.bounds.Location;
 					startLoc.Offset(new Point(10, 10));
 					e.Graphics.DrawLine(blackPen, startLoc, this.PointToClient(Cursor.Position));
 				}
 			}
-			
-			if (selectingInputs) 
-			{
-				for (int i = 0; i < selectedInputs.Count; i++) 
-				{
+
+			if (selectingInputs) {
+				for (int i = 0; i < selectedInputs.Count; i++) {
 					using (Font font = new Font("Arial", 10, FontStyle.Bold)) // Small font size
 					using (Brush brush = new SolidBrush(Color.Black))       // Text color
 					{
@@ -522,10 +452,8 @@ namespace Circuitry
 				}
 			}
 
-			if (selectingOutputs) 
-			{
-				for (int i = 0; i < selectedOutputs.Count; i++) 
-				{
+			if (selectingOutputs) {
+				for (int i = 0; i < selectedOutputs.Count; i++) {
 					using (Font font = new Font("Arial", 10, FontStyle.Bold)) // Small font size
 					using (Brush brush = new SolidBrush(Color.Black))       // Text color
 					{

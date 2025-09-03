@@ -504,7 +504,8 @@ public class CustomGate : Gate
 					{
 						this.inPins.Add(ip);
 					}
-				} else if (this.savedGates[i].pins[j] is OutPin op) 
+				} 
+				else if (this.savedGates[i].pins[j] is OutPin op) 
 				{
 					for (int k = 0; k < template.savedGates.Count; k++) 
 					{
@@ -512,9 +513,6 @@ public class CustomGate : Gate
 						{
 							if (((OutPin)template.savedGates[i].pins[j]).connections.Contains(template.savedGates[k].pins[l])) 
 							{
-								Debug.WriteLine(savedGates[k].GetType());
-								Debug.WriteLine(savedGates[k].pins.Count);
-								Debug.WriteLine(k + " " + l);
 								op.connections.Add((InPin)this.savedGates[k].pins[l]);
 								((InPin)this.savedGates[k].pins[l]).connection = op;
 							}
