@@ -1,6 +1,4 @@
-﻿using System;
-
-public class Line
+﻿public class Line
 {
 	private Pin startPoint;
 	private Pin endPoint;

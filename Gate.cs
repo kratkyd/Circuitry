@@ -560,6 +560,7 @@ public class CustomGate : Gate
 			this.outPins[i].offset = new Point(this.bounds.Width / (inPins.Count + 1) * (i + 1)-10, -10);
 			this.pins.Add(this.outPins[i]);
 		}
+		this.MoveTo(this.bounds.Location);
 
 	}
 
