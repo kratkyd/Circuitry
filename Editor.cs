@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Circuitry
 {
@@ -45,7 +44,7 @@ namespace Circuitry
 				("Input", typeof(InputGate)),
 				("Output", typeof(OutputGate))
 			};
-		customGates = new List<CustomGate> { };
+			customGates = new List<CustomGate> { };
 
 			InitializeComponent();
 			CreateMenu();
@@ -151,10 +150,19 @@ namespace Circuitry
 						AddInputBlock("Name the new gate", (text) => 
 						{
 							CreateNewGate(text);
+						}, (s, e) =>
+						{
+
 						});
 						Invalidate();
+					}, (s, e) =>
+					{
+						selectingOutputs = false;
 					});
 					Invalidate();
+				}, (s, e) =>
+				{
+					selectingInputs = false;
 				});
 			};
 			menu.Items.Add(newGateButton);
@@ -176,7 +184,7 @@ namespace Circuitry
 
 		private Panel CreateDynamicButtons() 
 		{
-			Panel leftPanel = new Panel 
+			Panel panel = new Panel 
 			{
 				Dock = DockStyle.Left,     
 				Width = 120,     
@@ -189,7 +197,7 @@ namespace Circuitry
 				Button btn = new Button 
 				{
 					Text = options[i].name,
-					Width = leftPanel.Width - 10,
+					Width = panel.Width - 10,
 					Height = 40,
 					Location = new Point(5, i * 45)
 				};
@@ -202,21 +210,22 @@ namespace Circuitry
 					Invalidate();
 				};
 
-				leftPanel.Controls.Add(btn);
+				panel.Controls.Add(btn);
 			}
 
 			for (int i = 0; i < customGates.Count; i++) 
 			{
-				Button btn = new Button 
+				CustomGate cGate = customGates[i];
+				Button btn = new Button
 				{
-					Text = customGates[i].text,
-					Width = leftPanel.Width - 10,
+					Text = cGate.text,
+					Width = panel.Width - 10,
 					Height = 40,
-					Location = new Point(5, options.Count * 45 + 10 + i * 45)
+					Location = new Point(5, options.Count * 45 + 10 + i * 45),
+					Padding = new Padding(0, 0, (panel.Width - 10) / 5, 0)
 				};
 
 				CustomGate cg = customGates[i];
-
 				btn.Click += (s, e) => 
 				{
 					Gate gateInstance = cg.createInstance();
@@ -224,15 +233,36 @@ namespace Circuitry
 					Invalidate();
 				};
 
-				leftPanel.Controls.Add(btn);
+				Button closeBtn = new Button
+				{
+					BackColor = Color.Red,
+					Size = new Size(20, 20),
+					Location = new Point(btn.Location.X + btn.Width - 30, btn.Location.Y + btn.Height / 2 - 10)
+				};
+
+				closeBtn.Click += (s, e) =>
+				{
+					AddMessageBlock("Are you sure you want to delete gate " + btn.Text + "?", (s, e) =>
+					{
+						customGates.Remove(cGate);
+						this.Controls.Remove(leftPanel);
+						leftPanel = CreateDynamicButtons();
+						Invalidate();
+					}, (s, e) =>
+					{
+
+					});
+				};
+
+				panel.Controls.Add(closeBtn);
+				panel.Controls.Add(btn);
 			}
 
-			// Add the panel to the form
-			this.Controls.Add(leftPanel);
-			return leftPanel;
+			this.Controls.Add(panel);
+			return panel;
 		}
 
-		private void AddMessageBlock(string message, EventHandler buttonClickHandler) 
+		private void AddMessageBlock(string message, EventHandler buttonClickHandler, EventHandler cancelClickHandler) 
 		{
 
 			Panel block = new Panel 
@@ -267,13 +297,29 @@ namespace Circuitry
 				block.Dispose();
 			};
 
+			Button cancelBtn = new Button
+			{
+				Text = "Cancel",
+				Size = new Size(80, 30),
+				Location = new Point(160, 80)
+			};
+
+			cancelBtn.Click += (s, e) =>
+			{
+				cancelClickHandler?.Invoke(s, e);
+
+				this.Controls.Remove(block);
+				block.Dispose();
+			};
+
 			block.Controls.Add(lbl);
 			block.Controls.Add(btn);
+			block.Controls.Add(cancelBtn);
 
 			this.Controls.Add(block);
 		}
 
-		private void AddInputBlock(string labelText, Action<string> buttonHandler) 
+		private void AddInputBlock(string labelText, Action<string> buttonHandler, EventHandler cancelClickHandler) 
 		{
 
 			Panel block = new Panel 
@@ -314,9 +360,25 @@ namespace Circuitry
 				block.Dispose();
 			};
 
+			Button cancelBtn = new Button
+			{
+				Text = "Cancel",
+				Size = new Size(80, 30),
+				Location = new Point(200, 65)
+			};
+
+			cancelBtn.Click += (s, e) =>
+			{
+				cancelClickHandler?.Invoke(s, e);
+
+				this.Controls.Remove(block);
+				block.Dispose();
+			};
+
 			block.Controls.Add(lbl);
 			block.Controls.Add(input);
 			block.Controls.Add(btn);
+			block.Controls.Add(cancelBtn);
 			this.Controls.Add(block);
 		}
 
