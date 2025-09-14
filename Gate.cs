@@ -3,9 +3,10 @@ using System.CodeDom;
 using System.Diagnostics;
 using System.Drawing;
 using System.Security.Cryptography.X509Certificates;
+using System.Text.Json.Serialization;
 using System.Windows.Forms.Design;
 
-public abstract class Gate 
+public class Gate 
 {
 	public Rectangle bounds { get; protected set; }
 	public List<Pin> pins = new List<Pin> { };
@@ -377,11 +378,12 @@ public class OutputGate : Gate
 
 public class CustomGate : Gate 
 {
-	List<Gate> savedGates;
-	List<InPin> inPins = new List<InPin> { };
-	List<OutPin> outPins = new List<OutPin> { };
+	public List<Gate> savedGates;
+	public List<InPin> inPins = new List<InPin> { };
+	public List<OutPin> outPins = new List<OutPin> { };
 	List<InputGate> inputGates;
 	List<OutputGate> outputGates;
+
 
 	public CustomGate(int x, int y, Control parent, string name, List<Gate> gates, List<InputGate> selectedInputs, List<OutputGate> selectedOutputs) : base(x, y, parent) 
 	{
@@ -392,6 +394,7 @@ public class CustomGate : Gate
 
 		this.text = name;
 		//create Blankgates instead of input/output gates
+		
 		foreach (InputGate ig in this.inputGates) 
 		{
 			BlankGate gateInstance = (BlankGate)Activator.CreateInstance(typeof(BlankGate), 0, 0, parent);
@@ -400,6 +403,10 @@ public class CustomGate : Gate
 			if (index != -1) 
 			{
 				savedGates[index] = gateInstance;
+				foreach (InPin p in ((OutPin)ig.pins[0]).connections)
+				{
+					p.connection = (OutPin)gateInstance.pins[0];
+				}
 			}
 		}
 
@@ -410,8 +417,11 @@ public class CustomGate : Gate
 			if (index != -1) 
 			{
 				savedGates[index] = gateInstance;
+				((InPin)og.pins[0]).connection.connections.Remove((InPin)og.pins[0]);
+				((InPin)og.pins[0]).connection.connections.Add((InPin)gateInstance.pins[1]);
 			}
 		}
+
 		//fix connections
 		foreach (InputGate ig in this.inputGates) 
 		{
@@ -590,4 +600,23 @@ public class CustomGate : Gate
 	{
 		return new CustomGate(500, 500, this);
 	}
+}
+
+//this weird data saving is because of JsonSerializer
+public class GateData
+{
+	public string name { get; set; } = "";
+	public List<int> connectionGates { get; set; } = new();
+	public List<int> connectionPins { get; set; } = new();
+}
+
+public class CustomGateData
+{
+	public string name { get; set; } = "";
+	public List<GateData> gateList { get; set; } = new List<GateData>();
+	// inputGateIndexes[0] is the index of the gate in the list, inputPinIndexes[0] is the index of the pin in the Gate
+	public List<int> inputGateIndexes { get; set; } = new List<int>();
+	public List<int> inputPinIndexes { get; set; } = new List<int>();
+	public List<int> outputGateIndexes { get; set; } = new List<int>();
+	public List<int> outputPinIndexes { get; set; } = new List<int>();
 }
