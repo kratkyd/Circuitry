@@ -9,7 +9,7 @@ namespace Circuitry
 		Panel leftPanel;
 
 		private List<Gate> gates;
-		private List<CustomGate> customGates;
+		private List<CustomGateData> customGates;
 		private Gate? draggedGate;
 
 		private bool dragging = false;
@@ -25,6 +25,7 @@ namespace Circuitry
 		private List<OutputGate> selectedOutputs;
 
 		private string filePath = "data.json";
+		public static Dictionary<string, object> basicGates = new Dictionary<string, object>();
 
 		private Rectangle deleteSpot;
 		public Editor()
@@ -47,9 +48,15 @@ namespace Circuitry
 				("Input", typeof(InputGate)),
 				("Output", typeof(OutputGate))
 			};
-			customGates = new List<CustomGate> { };
+			foreach ((string name, Type gateType) o in options)
+			{
+				basicGates.Add(o.name, o.gateType);
+			}
+
+			customGates = new List<CustomGateData> { };
 
 			InitializeComponent();
+			LoadCustomGates();
 			CreateMenu();
 			leftPanel = CreateDynamicButtons();
 
@@ -63,7 +70,15 @@ namespace Circuitry
 			this.KeyPress += Form1_KeyPress;
 		}
 		private void OpenLevel(int levelNum) {
-			((MainForm)this.Parent).ShowControl(((MainForm)this.Parent).level1);
+			switch (levelNum)
+			{
+				case 1:
+					((MainForm)this.Parent).ShowControl(((MainForm)this.Parent).level1);
+					break;
+				case 2:
+					((MainForm)this.Parent).ShowControl(((MainForm)this.Parent).level2);
+					break;
+			}
 		}
 
 		private void RunSignal() {
@@ -100,24 +115,132 @@ namespace Circuitry
 			Debug.WriteLine("create new gate");
 			selectedInputs.Reverse();
 			selectedOutputs.Reverse();
-			CustomGate newGate = new CustomGate(500, 500, this, gateName, gates, selectedInputs, selectedOutputs);
+			CustomGateData newGateData = CreateGateData(gateName, gates, selectedInputs, selectedOutputs);
+
+			Debug.WriteLine(newGateData);
 			selectedInputs = new List<InputGate> { };
 			selectedOutputs = new List<OutputGate> { };
 			foreach (Gate g in gates) 
 			{
-				if (g is InputGate ig) 
-				{
-					ig.toggleButton.Visible = false;
-				}
+				g.Remove();
 			}
 			gates = new List<Gate> { };
-			customGates.Add(newGate);
+			customGates.Add(newGateData);
 			Invalidate();
 			this.Controls.Remove(leftPanel);
 			leftPanel = CreateDynamicButtons();
-			saveCustomGates();
+			SaveCustomGates();
 		}
 
+		public List<Gate> CreateGateList(CustomGate gate)
+		{
+			List<Gate> ret = new List<Gate>();
+			foreach (Gate g in gate.savedGates)
+			{
+				if (g is CustomGate cg)
+				{
+					List<Gate> list = CreateGateList(cg);
+					foreach (Gate h in list)
+					{
+						ret.Add(h);
+					}
+				}
+				else
+				{
+					ret.Add(g);
+				}
+			}
+			return ret;
+		}
+
+		private CustomGateData CreateGateData(string name, List<Gate> gateList, List<InputGate> gateInputs, List<OutputGate> gateOutputs)
+		{
+			CustomGateData ret = new CustomGateData();
+			ret.name = name;
+			// filter out inputs and outpust that were not selected
+			foreach (Gate g in gateList)
+			{
+				if ((g is InputGate ig && !gateInputs.Contains(ig)) || (g is OutputGate og && !gateOutputs.Contains(og))){
+					g.Remove();
+				}
+			}
+			gateList.RemoveAll(item => (item is InputGate ig && !gateInputs.Contains(ig)) || (item is OutputGate og && !gateOutputs.Contains(og)));
+			// list of gates inside of any customgate object
+			List<Gate> customGatesUnpacked = new List<Gate>();
+			foreach (Gate g in gateList)
+			{
+				if (g is CustomGate cg)
+				{
+					customGatesUnpacked.AddRange(CreateGateList(cg));
+				}
+			}
+			// remove customGates, replace them with their gateLists
+			gateList.RemoveAll(item => item is CustomGate);
+			gateList.AddRange(customGatesUnpacked);
+
+			foreach (Gate g in gateList)
+			{
+				GateData gd = new GateData();
+				gd.name = g.GetType().Name;
+				foreach (Pin p in g.pins)
+				{
+					if (p is InPin ip)
+					{
+						if (ip.connection == null)
+						{
+							gd.connectionGates.Add(-1);
+							gd.connectionPins.Add(-1);
+							continue;
+						}
+						for (int i = 0; i < gateList.Count; i++)
+						{
+							if (ip.connection.parent == gateList[i])
+							{
+								for (int j = 0; j < gateList[i].pins.Count; j++)
+								{
+									if (ip.connection == gateList[i].pins[j])
+									{
+										gd.connectionGates.Add(i);
+										gd.connectionPins.Add(j);
+										break;
+									}
+								}
+								break;
+							}
+						}
+					}
+				}
+				ret.gateList.Add(gd);
+			}
+			foreach (InputGate ig in gateInputs)
+			{
+				ret.inputGateIndexes.Add(gateList.IndexOf(ig));
+			}
+			foreach (OutputGate og in gateOutputs)
+			{
+				ret.outputGateIndexes.Add(gateList.IndexOf(og));
+			}
+			return ret;
+		}
+		
+		private void SaveCustomGates()
+		{
+			List<CustomGateData> dataToSave = new List<CustomGateData>();
+			foreach (CustomGateData cgd in customGates)
+			{
+				dataToSave.Add(cgd);
+			}
+			string json = JsonSerializer.Serialize(dataToSave);
+			File.WriteAllText(filePath, json);
+		}
+
+		private void LoadCustomGates()
+		{
+			string json = File.ReadAllText(filePath);
+			List<CustomGateData> dataFromFile = JsonSerializer.Deserialize<List<CustomGateData>>(json);
+			customGates = dataFromFile;
+		}
+		
 		private void CreateMenu() {
 			MenuStrip menu = new MenuStrip();
 
@@ -178,7 +301,7 @@ namespace Circuitry
 			});
 			levelMenu.DropDownItems.Add("Level 2", null, (s, e) => 
 			{
-				//Open_Level(2);
+				OpenLevel(2);
 			});
 			menu.Items.Add(levelMenu);
 
@@ -217,40 +340,38 @@ namespace Circuitry
 				panel.Controls.Add(btn);
 			}
 
-			for (int i = 0; i < customGates.Count; i++) 
+			for (int i = 0; i < customGates.Count; i++)
 			{
-				CustomGate cGate = (CustomGate)customGates[i];
+				CustomGateData cgd = customGates[i];
 				Button btn = new Button
 				{
-					Text = cGate.text,
+					Text = cgd.name,
 					Width = panel.Width - 10,
 					Height = 40,
 					Location = new Point(5, options.Count * 45 + 10 + i * 45),
 					Padding = new Padding(0, 0, (panel.Width - 10) / 5, 0)
 				};
-
-				CustomGate cg = (CustomGate)customGates[i];
-				btn.Click += (s, e) => 
+				btn.Click += (s, e) =>
 				{
-					Gate gateInstance = cg.createInstance();
+
+					Gate gateInstance = new CustomGate(200, 100, this, cgd);
 					gates.Add(gateInstance);
 					Invalidate();
 				};
-
 				Button closeBtn = new Button
 				{
 					BackColor = Color.Red,
 					Size = new Size(20, 20),
 					Location = new Point(btn.Location.X + btn.Width - 30, btn.Location.Y + btn.Height / 2 - 10)
 				};
-
 				closeBtn.Click += (s, e) =>
 				{
 					AddMessageBlock("Are you sure you want to delete gate " + btn.Text + "?", (s, e) =>
 					{
-						customGates.Remove(cGate);
+						customGates.Remove(cgd);
 						this.Controls.Remove(leftPanel);
 						leftPanel = CreateDynamicButtons();
+						SaveCustomGates();
 						Invalidate();
 					}, (s, e) =>
 					{
@@ -385,115 +506,6 @@ namespace Circuitry
 			block.Controls.Add(cancelBtn);
 			this.Controls.Add(block);
 		}
-
-
-		public List<Gate> CreateGateList(CustomGate gate)
-		{
-			List<Gate> ret = new List<Gate>();
-			foreach (Gate g in gate.savedGates)
-			{
-				if (g is CustomGate cg)
-				{
-					List<Gate> list = CreateGateList(cg);
-					foreach (Gate h in list)
-					{
-						ret.Add(h);
-					}
-				}
-				else
-				{
-					ret.Add(g);
-				}
-			}
-			return ret;
-		}
-
-		public CustomGateData CreateGateDataObject(CustomGate gate)
-		{
-			CustomGateData cgd = new CustomGateData();
-			List<Gate> list = CreateGateList(gate);
-			List<GateData> dataList = new List<GateData>();
-			
-			//probably should be done somewhere else
-			foreach (Gate g in list)
-			{
-				if (g is InputGate || g is OutputGate)
-				{
-					g.Remove();
-				}
-			}
-			list.RemoveAll(item => item is InputGate || item is OutputGate);
-			foreach (Gate g in list)
-			{
-				GateData gd = new GateData();
-				gd.name = g.GetType().Name;
-				foreach (Pin p in g.pins)
-				{
-					if (p is InPin ip)
-					{
-						if (ip.connection == null)
-						{
-							gd.connectionGates.Add(-1);
-							gd.connectionPins.Add(-1);
-							continue;
-						}
-						Debug.WriteLine(gd.name);
-						Debug.WriteLine(ip.connection.parent);
-						for (int i = 0; i < list.Count; i++)
-						{
-							if (ip.connection.parent == list[i])
-							{
-								for (int j = 0; j < list[i].pins.Count; j++)
-								{
-									if (ip.connection == list[i].pins[j])
-									{
-										gd.connectionGates.Add(i);
-										gd.connectionPins.Add(j);
-										break;
-									}
-								}
-								break;
-							}
-						}
-					}
-					/*
-					else if (p is OutPin op)
-					{
-						gd.connectionGates.Add(-1);
-						gd.connectionPins.Add(-1);
-					}
-					*/
-				}
-				dataList.Add(gd);
-			}
-			cgd.name = gate.text;
-			cgd.gateList = dataList;
-
-			foreach (InPin ip in gate.inPins)
-			{
-				cgd.inputGateIndexes.Add(list.IndexOf(ip.parent));
-				cgd.inputPinIndexes.Add(ip.parent.pins.IndexOf(ip));
-			}
-			foreach (OutPin op in gate.outPins){
-				cgd.outputGateIndexes.Add(list.IndexOf(op.parent));
-				cgd.outputPinIndexes.Add(op.parent.pins.IndexOf(op));
-			}
-
-			return cgd;
-		}
-
-		private void saveCustomGates()
-		{
-			List<CustomGateData> dataToSave = new List<CustomGateData>();
-			foreach (CustomGate cg in customGates)
-			{
-				CustomGateData cgd = CreateGateDataObject(cg);
-				dataToSave.Add(cgd);
-			}
-			string json = JsonSerializer.Serialize(dataToSave);
-			File.WriteAllText(filePath, json);
-		}
-
 
 
 		private void Exit_Click(object sender, EventArgs e) 

@@ -9,14 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="Level.cs" />
-    <Compile Remove="Level.Designer.cs" />
     <Compile Remove="Other.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Remove="Level.resx" />
-    <EmbeddedResource Remove="Level1.resx" />
   </ItemGroup>
 
 </Project>

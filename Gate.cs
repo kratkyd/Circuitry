@@ -97,7 +97,6 @@ public class Gate
 						c.signal = op.signal;
 						if (c.parent.GetType() == typeof(BlankGate)) 
 						{
-							Debug.WriteLine("hello");
 							c.parent.Process();
 							c.parent.Transfer();
 						}
@@ -378,202 +377,68 @@ public class OutputGate : Gate
 
 public class CustomGate : Gate 
 {
-	public List<Gate> savedGates;
+	public List<Gate> savedGates = new List<Gate> { };
 	public List<InPin> inPins = new List<InPin> { };
 	public List<OutPin> outPins = new List<OutPin> { };
 	List<InputGate> inputGates;
 	List<OutputGate> outputGates;
 
 
-	public CustomGate(int x, int y, Control parent, string name, List<Gate> gates, List<InputGate> selectedInputs, List<OutputGate> selectedOutputs) : base(x, y, parent) 
+	//public CustomGate(Control parent, )
+	public CustomGate (int x, int y, Control parent, CustomGateData data) : base (x, y, parent)
 	{
-		this.bounds = new Rectangle(x, y, 0, 0);
-		this.savedGates = new List<Gate>(gates);
-		this.inputGates = new List<InputGate>(selectedInputs);
-		this.outputGates = new List<OutputGate>(selectedOutputs);
-
-		this.text = name;
-		//create Blankgates instead of input/output gates
-		
-		foreach (InputGate ig in this.inputGates) 
+		this.text = data.name;
+		this.bounds = new Rectangle(x, y, Math.Max(80, 40 + 40*Math.Max(data.inputGateIndexes.Count, data.outputGateIndexes.Count)), 80);
+		foreach (GateData gd in data.gateList)
 		{
-			BlankGate gateInstance = (BlankGate)Activator.CreateInstance(typeof(BlankGate), 0, 0, parent);
-
-			int index = savedGates.IndexOf(ig);
-			if (index != -1) 
+			Gate obj;
+			if (gd.name == "InputGate" || gd.name == "OutputGate")
 			{
-				savedGates[index] = gateInstance;
-				foreach (InPin p in ((OutPin)ig.pins[0]).connections)
-				{
-					p.connection = (OutPin)gateInstance.pins[0];
-				}
+				obj = (Gate)Activator.CreateInstance(typeof(BlankGate), x, y, parent);
 			}
+			else
+			{
+				obj = (Gate)Activator.CreateInstance(GateTypes.basicGates[gd.name], x, y, parent);
+			}
+			this.savedGates.Add(obj);
 		}
 
-		foreach (OutputGate og in this.outputGates) 
+		// recreate connections
+		for (int i = 0; i < data.gateList.Count; i++)
 		{
-			BlankGate gateInstance = (BlankGate)Activator.CreateInstance(typeof(BlankGate), 0, 0, parent);
-			int index = savedGates.IndexOf(og);
-			if (index != -1) 
+			if (data.gateList[i].name == "InputGate") { continue; }
+			int j = 0;
+			foreach (Pin p in savedGates[i].pins)
 			{
-				savedGates[index] = gateInstance;
-				((InPin)og.pins[0]).connection.connections.Remove((InPin)og.pins[0]);
-				((InPin)og.pins[0]).connection.connections.Add((InPin)gateInstance.pins[1]);
-			}
-		}
-
-		//fix connections
-		foreach (InputGate ig in this.inputGates) 
-		{
-			int index = gates.IndexOf(ig);
-
-			for (int i = 0; i < gates.Count; i++) 
-			{
-				for (int j = 0; j < gates[i].pins.Count; j++) 
-				{
-					if (((OutPin)ig.pins[0]).connections.Contains(gates[i].pins[j])) 
-					{
-						if (this.outputGates.Contains(gates[i])) 
-						{
-							((OutPin)savedGates[index].pins[0]).connections.Add((InPin)savedGates[i].pins[1]);
-						} else 
-						{
-							((OutPin)savedGates[index].pins[0]).connections.Add((InPin)savedGates[i].pins[j]);
-						}
-					}
-				}
-			}
-
-			inPins.Add((InPin)savedGates[index].pins[1]);
-		}
-
-		foreach (OutputGate og in this.outputGates) 
-		{
-			int index = gates.IndexOf(og);
-			for (int i = 0; i < gates.Count; i++) 
-			{
-				for (int j = 0; j < gates[i].pins.Count; j++) 
-				{
-					if (((InPin)og.pins[0]).connection == gates[i].pins[j])
-					{
-						if (this.inputGates.Contains(gates[i])) 
-						{
-							((InPin)savedGates[index].pins[1]).connection = (OutPin)savedGates[i].pins[0];
-						} else 
-						{
-							((InPin)savedGates[index].pins[1]).connection = (OutPin)savedGates[i].pins[j];
-						}
-					}
-				}
-			}
-			outPins.Add((OutPin)savedGates[index].pins[0]);
-		}
-
-	}
-
-	//this constructor creates a copy
-
-	public CustomGate(int x, int y, CustomGate template) : base(template.bounds.X, template.bounds.Y, template.parent) 
-	{
-		this.text = template.text;
-
-		this.savedGates = new List<Gate> { };
-		Gate gateInstance;
-		foreach(Gate g in template.savedGates) 
-		{
-			if (g is CustomGate cg) 
-			{
-				gateInstance = (Gate)Activator.CreateInstance(typeof(CustomGate), -500, -500, cg);
-			} 
-			else 
-			{
-				gateInstance = (Gate)Activator.CreateInstance(g.GetType(), -500, -500, this.parent);
-			}
-			this.savedGates.Add(gateInstance);
-		}
-
-
-		for (int i = 0; i < template.savedGates.Count; i++) 
-		{
-			for (int j = 0; j < template.savedGates[i].pins.Count; j++) 
-			{
-				if (this.savedGates[i].pins[j] is InPin ip) 
-				{
-					for (int k = 0; k < template.savedGates.Count; k++) 
-					{
-						for (int l = 0; l < template.savedGates[k].pins.Count; l++) 
-						{
-							if (((InPin)template.savedGates[i].pins[j]).connection == template.savedGates[k].pins[l]) 
-							{
-								ip.connection = (OutPin)this.savedGates[k].pins[l];
-								((OutPin)this.savedGates[k].pins[l]).connections.Add(ip);
-							}
-						}
-					}
-					if (template.inPins.Contains(template.savedGates[i].pins[j])) 
-					{
-						this.inPins.Add(ip);
-					}
-				} 
-				else if (this.savedGates[i].pins[j] is OutPin op) 
-				{
-					for (int k = 0; k < template.savedGates.Count; k++) 
-					{
-						for (int l = 0; l < template.savedGates[k].pins.Count; l++)
-						{
-							if (((OutPin)template.savedGates[i].pins[j]).connections.Contains(template.savedGates[k].pins[l])) 
-							{
-								op.connections.Add((InPin)this.savedGates[k].pins[l]);
-								((InPin)this.savedGates[k].pins[l]).connection = op;
-							}
-						}
-					}
-					if (template.outPins.Contains(template.savedGates[i].pins[j])) 
-					{
-						this.outPins.Add(op);
-					}
-
-				}
-			}
-		}
-
-		foreach (Gate g in this.savedGates) 
-		{
-			Debug.WriteLine("Gate: "+g);
-			Debug.WriteLine(g.pins.Count);
-			foreach (Pin p in g.pins) 
-			{
-				Debug.WriteLine("Pin: "+p);
 				if (p is InPin ip)
 				{
-					Debug.WriteLine(ip.connection);
-				} else if (p is OutPin op) 
-				{
-					Debug.WriteLine(op.connections);
-					foreach (InPin con in op.connections)
+					Debug.WriteLine(i + " " + j);
+					if (data.gateList[i].connectionGates[j] != -1)
 					{
-						Debug.WriteLine(con);
+						ip.Connect(savedGates[data.gateList[i].connectionGates[j]].pins[data.gateList[i].connectionPins[j]]);
 					}
+					j++;
 				}
 			}
 		}
 
+		for (int i = 0; i < data.inputGateIndexes.Count; i++)
+		{
+			Pin p = this.savedGates[data.inputGateIndexes[i]].pins[1];
+			p.offset = new Point((this.bounds.Width)/(data.inputGateIndexes.Count+1)*(i+1) - 10, this.bounds.Height-10);
+			this.pins.Add(p);
+		}
 
-		this.bounds = new Rectangle(x, y, 60 * Math.Max(Math.Max(inPins.Count, outPins.Count), 1), 80);
-		for (int i = 0; i < this.inPins.Count; i++) 
+		for (int i = 0; i < data.outputGateIndexes.Count; i++)
 		{
-			this.inPins[i].offset = new Point(this.bounds.Width / (inPins.Count + 1) * (i+1)-10, this.bounds.Height - 10);
-			this.pins.Add(this.inPins[i]);
+			Pin p = this.savedGates[data.outputGateIndexes[i]].pins[0];
+			p.offset = new Point((this.bounds.Width) / (data.outputGateIndexes.Count + 1) * (i + 1) - 10, -10);
+			this.pins.Add(p);
 		}
-		for (int i = 0; i < this.outPins.Count; i++) 
-		{
-			this.outPins[i].offset = new Point(this.bounds.Width / (inPins.Count + 1) * (i + 1)-10, -10);
-			this.pins.Add(this.outPins[i]);
-		}
+		//to align pins
 		this.MoveTo(this.bounds.Location);
-
 	}
-
+	
 	public override bool Transfer() 
 	{
 		bool ret = false;
@@ -595,11 +460,6 @@ public class CustomGate : Gate
 			g.Process();
 		}
 	}
-
-	public CustomGate createInstance() 
-	{
-		return new CustomGate(500, 500, this);
-	}
 }
 
 //this weird data saving is because of JsonSerializer
@@ -616,7 +476,23 @@ public class CustomGateData
 	public List<GateData> gateList { get; set; } = new List<GateData>();
 	// inputGateIndexes[0] is the index of the gate in the list, inputPinIndexes[0] is the index of the pin in the Gate
 	public List<int> inputGateIndexes { get; set; } = new List<int>();
-	public List<int> inputPinIndexes { get; set; } = new List<int>();
 	public List<int> outputGateIndexes { get; set; } = new List<int>();
-	public List<int> outputPinIndexes { get; set; } = new List<int>();
+}
+
+public static class GateTypes
+{
+	public static Dictionary<string, Type> basicGates = new Dictionary<string, Type>
+		{
+			{ "OneGate", typeof(OneGate) },
+			{ "ZeroGate", typeof(ZeroGate) },
+			{ "NotGate", typeof(NotGate) },
+			{ "AndGate", typeof(AndGate) },
+			{ "NandGate", typeof(NandGate) },
+			{ "OrGate", typeof(OrGate) },
+			{ "NorGate", typeof(NorGate) },
+			{ "XorGate", typeof(XorGate) },
+			{ "BlankGate", typeof(BlankGate) },
+			{ "InputGate", typeof(InputGate) },
+			{ "OutputGate", typeof(OutputGate) }
+		};
 }
